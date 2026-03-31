@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VC 투자유치 주간 리포트</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: '맑은 고딕', 'Malgun Gothic', -apple-system, sans-serif; background: #f0f2f5; color: #1a1a2e; }
+
+  .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: #fff; padding: 32px 40px; }
+  .header h1 { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+  .header .sub { font-size: 14px; color: #94a3b8; }
+  .header .stats { display: flex; gap: 24px; margin-top: 20px; flex-wrap: wrap; }
+  .header .stat-box { background: rgba(255,255,255,0.08); border-radius: 10px; padding: 16px 24px; min-width: 130px; }
+  .header .stat-box .num { font-size: 28px; font-weight: 700; color: #60a5fa; }
+  .header .stat-box .label { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+
+  .controls { padding: 16px 40px; background: #fff; border-bottom: 1px solid #e2e8f0; }
+  .controls-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+  .controls-row:last-child { margin-bottom: 0; }
+  .search-box { flex: 1; min-width: 250px; position: relative; }
+  .search-box input { width: 100%; padding: 10px 16px 10px 40px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; outline: none; transition: border 0.2s; }
+  .search-box input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+  .search-box::before { content: "\1F50D"; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 16px; }
+  .filter-btn { padding: 7px 14px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; font-size: 12px; cursor: pointer; transition: all 0.2s; }
+  .filter-btn:hover, .filter-btn.active { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+  .year-btn { padding: 7px 14px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; font-size: 12px; cursor: pointer; transition: all 0.2s; }
+  .year-btn:hover, .year-btn.active { background: #0f3460; color: #fff; border-color: #0f3460; }
+  .select-filter { padding: 7px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 12px; outline: none; cursor: pointer; }
+  .filter-label { font-size: 12px; color: #64748b; font-weight: 600; margin-right: -4px; }
+  .result-count { font-size: 12px; color: #64748b; margin-left: auto; }
+
+  .table-wrap { padding: 20px 40px 40px; }
+  .table-container { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); max-height: calc(100vh - 320px); overflow-y: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { background: #1a1a2e; color: #fff; padding: 12px 14px; font-size: 12px; font-weight: 600; text-align: left; position: sticky; top: 0; white-space: nowrap; z-index: 10; cursor: pointer; user-select: none; }
+  thead th:hover { background: #2a2a4e; }
+  thead th .sort-icon { margin-left: 4px; opacity: 0.4; }
+  thead th.sorted .sort-icon { opacity: 1; }
+  thead th:first-child { padding-left: 20px; }
+  tbody tr { border-bottom: 1px solid #f1f5f9; transition: background 0.15s; }
+  tbody tr:hover { background: #f8fafc; }
+  tbody td { padding: 12px 14px; font-size: 12px; vertical-align: top; line-height: 1.6; }
+  tbody td:first-child { padding-left: 20px; }
+  .company-name { font-weight: 700; font-size: 13px; color: #1a1a2e; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; white-space: nowrap; }
+  .badge-seed { background: #fef3c7; color: #92400e; }
+  .badge-prea { background: #ede9fe; color: #5b21b6; }
+  .badge-a { background: #dbeafe; color: #1e40af; }
+  .badge-b { background: #d1fae5; color: #065f46; }
+  .badge-c { background: #fce7f3; color: #9d174d; }
+  .badge-d { background: #ffedd5; color: #9a3412; }
+  .badge-ipo { background: #fecaca; color: #991b1b; }
+  .badge-etc { background: #f3f4f6; color: #374151; }
+  .amount { font-weight: 700; color: #0f3460; white-space: nowrap; font-size: 12px; }
+  .desc-text { color: #475569; font-size: 11px; max-width: 380px; }
+  .desc-text ul { margin: 0; padding-left: 14px; }
+  .desc-text li { margin-bottom: 2px; }
+  .sector-tag { display: inline-block; padding: 2px 8px; background: #f1f5f9; border-radius: 4px; font-size: 11px; color: #475569; }
+  .investors-text { font-size: 11px; color: #64748b; max-width: 220px; }
+  .date-text { color: #64748b; white-space: nowrap; }
+  .week-divider td { background: #f0f4ff; padding: 10px 20px; font-weight: 700; font-size: 13px; color: #1a1a2e; border-bottom: 2px solid #dbeafe; }
+  .no-results { text-align: center; padding: 60px; color: #94a3b8; font-size: 16px; }
+  .load-more { text-align: center; padding: 16px; }
+  .load-more button { padding: 10px 32px; background: #1a1a2e; color: #fff; border: none; border-radius: 8px; font-size: 13px; cursor: pointer; }
+  .load-more button:hover { background: #2a2a4e; }
+
+  @media (max-width: 1024px) {
+    .header, .controls, .table-wrap { padding-left: 16px; padding-right: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>VC 투자유치 주간 리포트</h1>
+  <div class="sub">SLinvestment 내부용 | 매주 금요일 자동 업데이트</div>
+  <div class="stats">
+    <div class="stat-box"><div class="num" id="stat-total">-</div><div class="label">총 투자 건수</div></div>
+    <div class="stat-box"><div class="num" id="stat-filtered">-</div><div class="label">검색 결과</div></div>
+    <div class="stat-box"><div class="num" id="stat-weeks">-</div><div class="label">수집 주차</div></div>
+    <div class="stat-box"><div class="num" id="stat-period">-</div><div class="label">데이터 기간</div></div>
+    <div class="stat-box"><div class="num" id="stat-updated">-</div><div class="label">마지막 업데이트</div></div>
+  </div>
+</div>
+
+<div class="controls">
+  <div class="controls-row">
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="회사명, 분야, 투자기관, 사업내용 검색...">
+    </div>
+  </div>
+  <div class="controls-row">
+    <span class="filter-label">연도</span>
+    <button class="year-btn active" data-year="all">전체</button>
+    <button class="year-btn" data-year="2026">2026</button>
+    <button class="year-btn" data-year="2025">2025</button>
+    <button class="year-btn" data-year="2024">2024</button>
+    <button class="year-btn" data-year="2023">2023</button>
+    <span class="filter-label" style="margin-left:12px;">주차</span>
+    <select class="select-filter" id="weekFilter"><option value="all">전체 주차</option></select>
+    <span class="filter-label" style="margin-left:12px;">분야</span>
+    <select class="select-filter" id="sectorFilter"><option value="all">전체 분야</option></select>
+  </div>
+  <div class="controls-row">
+    <span class="filter-label">단계</span>
+    <button class="filter-btn active" data-stage="all">전체</button>
+    <button class="filter-btn" data-stage="Seed">Seed</button>
+    <button class="filter-btn" data-stage="Pre">Pre-A/B</button>
+    <button class="filter-btn" data-stage="Series A">Series A</button>
+    <button class="filter-btn" data-stage="Series B">Series B</button>
+    <button class="filter-btn" data-stage="Series C">Series C</button>
+    <button class="filter-btn" data-stage="Series D+">D 이상</button>
+    <span class="result-count" id="resultCount"></span>
+  </div>
+</div>
+
+<div class="table-wrap">
+  <div class="table-container" id="tableContainer">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:45px">No</th>
+          <th>회사명</th>
+          <th style="width:70px">날짜</th>
+          <th>분야</th>
+          <th>사업내용</th>
+          <th>투자기관</th>
+          <th style="width:100px">투자금액</th>
+          <th>내용</th>
+          <th style="width:90px">단계</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+    <div class="no-results" id="noResults" style="display:none;">검색 결과가 없습니다.</div>
+    <div class="load-more" id="loadMore" style="display:none;"><button onclick="loadMoreRows()">더 보기</button></div>
+  </div>
+</div>
+
+<script src="vc_data.js"></script>
+<script>
+let allDeals = [];
+let vcData = null;
+let filtered = [];
+let displayCount = 50;
+const PAGE_SIZE = 50;
+
+function loadData() {
+  vcData = VC_DATA;
+  processData();
+  render();
+}
+
+function processData() {
+  allDeals = [];
+  const weekSelect = document.getElementById('weekFilter');
+  const sectorSet = new Set();
+  const yearSet = new Set();
+
+  vcData.weeks.forEach(week => {
+    const opt = document.createElement('option');
+    opt.value = week.weekEnd;
+    opt.textContent = week.weekLabel + ' (' + week.totalDeals + '건)';
+    weekSelect.appendChild(opt);
+
+    const year = week.weekEnd.substring(0, 4);
+    yearSet.add(year);
+
+    week.deals.forEach(deal => {
+      deal.weekLabel = week.weekLabel;
+      deal.weekEnd = week.weekEnd;
+      deal.year = year;
+      allDeals.push(deal);
+      if (deal.sector) sectorSet.add(deal.sector);
+    });
+  });
+
+  const sectorSelect = document.getElementById('sectorFilter');
+  [...sectorSet].sort().forEach(s => {
+    if (!s) return;
+    const opt = document.createElement('option');
+    opt.value = s;
+    opt.textContent = s;
+    sectorSelect.appendChild(opt);
+  });
+
+  // Update dynamic year buttons based on actual data
+  const yearBtns = document.querySelectorAll('.year-btn[data-year]');
+  yearBtns.forEach(btn => {
+    const y = btn.dataset.year;
+    if (y !== 'all' && !yearSet.has(y)) btn.style.display = 'none';
+  });
+
+  document.getElementById('stat-total').textContent = allDeals.length.toLocaleString();
+  document.getElementById('stat-weeks').textContent = vcData.weeks.length + '주';
+  document.getElementById('stat-updated').textContent = vcData.lastUpdated;
+  if (vcData.weeks.length > 0) {
+    const first = vcData.weeks[vcData.weeks.length - 1].weekEnd.substring(0, 7);
+    const last = vcData.weeks[0].weekEnd.substring(0, 7);
+    document.getElementById('stat-period').textContent = first + ' ~ ' + last;
+  }
+}
+
+function getStageBadge(stage) {
+  if (!stage || stage === '-') return '<span class="badge badge-etc">-</span>';
+  const s = stage.toLowerCase();
+  let cls = 'badge-etc';
+  if (s.includes('seed')) cls = 'badge-seed';
+  else if (s.includes('pre')) cls = 'badge-prea';
+  else if ((s.includes('series a') || s.includes('a 브릿지') || s === 'a') && !s.includes('b') && !s.includes('c')) cls = 'badge-a';
+  else if (s.includes('series b') || s.includes('b 브릿지')) cls = 'badge-b';
+  else if (s.includes('series c')) cls = 'badge-c';
+  else if (s.includes('series d') || s.includes('series e') || s.includes('series f')) cls = 'badge-d';
+  else if (s.includes('ipo')) cls = 'badge-ipo';
+  return '<span class="badge ' + cls + '">' + stage + '</span>';
+}
+
+function descToHtml(desc) {
+  if (!desc) return '';
+  const lines = desc.split('\n').filter(l => l.trim());
+  if (lines.length === 0) return '';
+  const items = lines.map(l => '<li>' + l.replace(/^-\s*/, '').replace(/</g,'&lt;') + '</li>').join('');
+  return '<ul>' + items + '</ul>';
+}
+
+function escHtml(s) { return s ? s.replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''; }
+
+function matchStageFilter(stage, filter) {
+  if (filter === 'all') return true;
+  if (!stage) return false;
+  const s = stage.toLowerCase();
+  if (filter === 'Seed') return s.includes('seed');
+  if (filter === 'Pre') return s.includes('pre');
+  if (filter === 'Series A') return (s.includes('series a') || s.includes('a 브릿지') || s === 'a') && !s.includes('series b') && !s.includes('series c');
+  if (filter === 'Series B') return s.includes('series b') || s.includes('b 브릿지') || s.includes('pre b');
+  if (filter === 'Series C') return s.includes('series c');
+  if (filter === 'Series D+') return s.includes('series d') || s.includes('series e') || s.includes('series f') || s.includes('ipo');
+  return true;
+}
+
+function render() {
+  displayCount = PAGE_SIZE;
+  const search = document.getElementById('searchInput').value.toLowerCase().trim();
+  const weekFilter = document.getElementById('weekFilter').value;
+  const sectorFilter = document.getElementById('sectorFilter').value;
+  const yearFilter = document.querySelector('.year-btn.active')?.dataset.year || 'all';
+  const stageFilter = document.querySelector('.filter-btn.active')?.dataset.stage || 'all';
+
+  filtered = allDeals.filter(d => {
+    if (yearFilter !== 'all' && d.year !== yearFilter) return false;
+    if (weekFilter !== 'all' && d.weekEnd !== weekFilter) return false;
+    if (sectorFilter !== 'all' && d.sector !== sectorFilter) return false;
+    if (!matchStageFilter(d.stage, stageFilter)) return false;
+    if (search) {
+      const hay = [d.company, d.sector, d.business, d.investors, d.amount, d.description, d.stage].join(' ').toLowerCase();
+      const terms = search.split(/\s+/);
+      return terms.every(t => hay.includes(t));
+    }
+    return true;
+  });
+
+  document.getElementById('stat-filtered').textContent = filtered.length.toLocaleString();
+  document.getElementById('resultCount').textContent = '검색 결과: ' + filtered.length.toLocaleString() + '건';
+  renderRows();
+}
+
+function renderRows() {
+  const tbody = document.getElementById('tableBody');
+  const noResults = document.getElementById('noResults');
+  const loadMore = document.getElementById('loadMore');
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '';
+    noResults.style.display = 'block';
+    loadMore.style.display = 'none';
+    return;
+  }
+  noResults.style.display = 'none';
+
+  const showing = filtered.slice(0, displayCount);
+  let html = '';
+  let currentWeek = '';
+  showing.forEach((d, i) => {
+    if (d.weekLabel !== currentWeek) {
+      currentWeek = d.weekLabel;
+      html += '<tr class="week-divider"><td colspan="9">' + escHtml(currentWeek) + '</td></tr>';
+    }
+    html += '<tr>' +
+      '<td>' + (i + 1) + '</td>' +
+      '<td><span class="company-name">' + escHtml(d.company) + '</span></td>' +
+      '<td><span class="date-text">' + escHtml(d.date) + '</span></td>' +
+      '<td><span class="sector-tag">' + escHtml(d.sector) + '</span></td>' +
+      '<td>' + escHtml(d.business) + '</td>' +
+      '<td><span class="investors-text">' + escHtml(d.investors) + '</span></td>' +
+      '<td><span class="amount">' + escHtml(d.amount) + '</span></td>' +
+      '<td><div class="desc-text">' + descToHtml(d.description) + '</div></td>' +
+      '<td>' + getStageBadge(d.stage) + '</td>' +
+    '</tr>';
+  });
+  tbody.innerHTML = html;
+
+  loadMore.style.display = displayCount < filtered.length ? 'block' : 'none';
+}
+
+function loadMoreRows() {
+  displayCount += PAGE_SIZE;
+  renderRows();
+}
+
+// Event listeners
+document.getElementById('searchInput').addEventListener('input', debounce(render, 200));
+document.getElementById('weekFilter').addEventListener('change', render);
+document.getElementById('sectorFilter').addEventListener('change', render);
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    render();
+  });
+});
+
+document.querySelectorAll('.year-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.year-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    // Update week filter based on year
+    const year = btn.dataset.year;
+    const weekSelect = document.getElementById('weekFilter');
+    weekSelect.value = 'all';
+    render();
+  });
+});
+
+function debounce(fn, ms) {
+  let t;
+  return function(...args) { clearTimeout(t); t = setTimeout(() => fn.apply(this, args), ms); };
+}
+
+// Init
+loadData();
+</script>
+
+</body>
+</html>
