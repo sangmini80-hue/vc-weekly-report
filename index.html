@@ -45,9 +45,11 @@
   tbody td:first-child { padding-left: 20px; }
   .company-name { font-weight: 700; font-size: 13px; color: #1a1a2e; }
   .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; white-space: nowrap; }
+  .badge-preseed { background: #fef9c3; color: #713f12; }
   .badge-seed { background: #fef3c7; color: #92400e; }
   .badge-prea { background: #ede9fe; color: #5b21b6; }
   .badge-preb { background: #e0e7ff; color: #3730a3; }
+  .badge-prec { background: #fae8ff; color: #86198f; }
   .badge-preipo { background: #fee2e2; color: #991b1b; }
   .badge-a { background: #dbeafe; color: #1e40af; }
   .badge-b { background: #d1fae5; color: #065f46; }
@@ -56,11 +58,11 @@
   .badge-ipo { background: #fecaca; color: #991b1b; }
   .badge-etc { background: #f3f4f6; color: #374151; }
   .amount { font-weight: 700; color: #0f3460; white-space: nowrap; font-size: 12px; }
-  .desc-text { color: #475569; font-size: 11px; max-width: 380px; }
+  .desc-text { color: #475569; font-size: 11px; max-width: 456px; }
   .desc-text ul { margin: 0; padding-left: 14px; }
   .desc-text li { margin-bottom: 2px; }
   .sector-tag { display: inline-block; padding: 2px 8px; background: #f1f5f9; border-radius: 4px; font-size: 11px; color: #475569; }
-  .investors-text { font-size: 11px; color: #64748b; max-width: 220px; }
+  .investors-text { font-size: 11px; color: #64748b; max-width: 176px; }
   .date-text { color: #64748b; white-space: nowrap; }
   .week-divider td { background: #f0f4ff; padding: 10px 20px; font-weight: 700; font-size: 13px; color: #1a1a2e; border-bottom: 2px solid #dbeafe; }
   .no-results { text-align: center; padding: 60px; color: #94a3b8; font-size: 16px; }
@@ -108,14 +110,16 @@
   <div class="controls-row">
     <span class="filter-label">단계</span>
     <button class="filter-btn active" data-stage="all">전체</button>
+    <button class="filter-btn" data-stage="Pre Seed">Pre Seed</button>
     <button class="filter-btn" data-stage="Seed">Seed</button>
     <button class="filter-btn" data-stage="Pre A">Pre A</button>
-    <button class="filter-btn" data-stage="Pre B">Pre B</button>
-    <button class="filter-btn" data-stage="Pre IPO">Pre IPO</button>
     <button class="filter-btn" data-stage="Series A">Series A</button>
+    <button class="filter-btn" data-stage="Pre B">Pre B</button>
     <button class="filter-btn" data-stage="Series B">Series B</button>
+    <button class="filter-btn" data-stage="Pre C">Pre C</button>
     <button class="filter-btn" data-stage="Series C">Series C</button>
-    <button class="filter-btn" data-stage="Series D+">D 이상</button>
+    <button class="filter-btn" data-stage="Pre IPO">Pre IPO</button>
+    <button class="filter-btn" data-stage="기타">기타</button>
     <span class="result-count" id="resultCount"></span>
   </div>
 </div>
@@ -209,18 +213,19 @@ function processData() {
 
 function getStageBadge(stage) {
   if (!stage || stage === '-') return '<span class="badge badge-etc">-</span>';
-  const s = stage.toLowerCase();
+  const s = stage.toLowerCase().replace(/-/g, ' ');
   let cls = 'badge-etc';
-  if (s.includes('seed')) cls = 'badge-seed';
-  else if (s.includes('pre') && s.includes('ipo')) cls = 'badge-preipo';
-  else if (s.includes('pre') && (s.includes('b') || s.includes('B'))) cls = 'badge-preb';
-  else if (s.includes('pre') && (s.includes('a') || s.includes('A'))) cls = 'badge-prea';
-  else if (s.includes('pre')) cls = 'badge-prea';
-  else if ((s.includes('series a') || s.includes('a 브릿지') || s === 'a') && !s.includes('b') && !s.includes('c')) cls = 'badge-a';
+  if (s.includes('pre seed'))                          cls = 'badge-preseed';
+  else if (s === 'seed' || s.trim() === 'seed')        cls = 'badge-seed';
+  else if (s.includes('pre ipo'))                      cls = 'badge-preipo';
+  else if (s.includes('pre c'))                        cls = 'badge-prec';
+  else if (s.includes('pre b'))                        cls = 'badge-preb';
+  else if (s.includes('pre a'))                        cls = 'badge-prea';
+  else if (s.includes('series a') || s.includes('a 브릿지')) cls = 'badge-a';
   else if (s.includes('series b') || s.includes('b 브릿지')) cls = 'badge-b';
-  else if (s.includes('series c')) cls = 'badge-c';
+  else if (s.includes('series c'))                     cls = 'badge-c';
   else if (s.includes('series d') || s.includes('series e') || s.includes('series f')) cls = 'badge-d';
-  else if (s.includes('ipo')) cls = 'badge-ipo';
+  else if (s.includes('ipo'))                          cls = 'badge-ipo';
   return '<span class="badge ' + cls + '">' + stage + '</span>';
 }
 
@@ -236,16 +241,32 @@ function escHtml(s) { return s ? s.replace(/</g,'&lt;').replace(/>/g,'&gt;') : '
 
 function matchStageFilter(stage, filter) {
   if (filter === 'all') return true;
-  if (!stage) return false;
-  const s = stage.toLowerCase();
-  if (filter === 'Seed') return s.includes('seed');
-  if (filter === 'Pre A') return s.includes('pre') && s.includes('a') && !s.includes('b') && !s.includes('ipo');
-  if (filter === 'Pre B') return s.includes('pre') && s.includes('b') && !s.includes('ipo');
-  if (filter === 'Pre IPO') return s.includes('pre') && s.includes('ipo');
-  if (filter === 'Series A') return (s.includes('series a') || s.includes('a 브릿지') || s === 'a') && !s.includes('series b') && !s.includes('series c') && !s.includes('pre');
-  if (filter === 'Series B') return (s.includes('series b') || s.includes('b 브릿지')) && !s.includes('pre');
-  if (filter === 'Series C') return s.includes('series c');
-  if (filter === 'Series D+') return s.includes('series d') || s.includes('series e') || s.includes('series f') || (s.includes('ipo') && !s.includes('pre'));
+  if (!stage || stage === '-') return filter === '기타';
+  const s = stage.toLowerCase().replace(/-/g, ' ');
+
+  const isPreSeed = s.includes('pre seed');
+  const isSeed    = !isPreSeed && (s === 'seed' || s.trim() === 'seed' || (s.includes('seed') && !s.includes('pre')));
+  const isPreIPO  = s.includes('pre ipo');
+  const isPreC    = s.includes('pre c') && !isPreIPO;
+  const isPreB    = s.includes('pre b') && !isPreIPO;
+  const isPreA    = s.includes('pre a') && !isPreIPO && !isPreSeed;
+  const isSeriesA = !isPreA && !isPreB && !isPreC && (s.includes('series a') || s.includes('a 브릿지'));
+  const isSeriesB = !isPreB && (s.includes('series b') || s.includes('b 브릿지')) && !isSeriesA;
+  const isSeriesC = s.includes('series c') && !isPreC;
+  const isD       = s.includes('series d') || s.includes('series e') || s.includes('series f');
+  const isIPO     = s.includes('ipo') && !isPreIPO;
+  const isKnown   = isPreSeed||isSeed||isPreIPO||isPreC||isPreB||isPreA||isSeriesA||isSeriesB||isSeriesC||isD||isIPO;
+
+  if (filter === 'Pre Seed')  return isPreSeed;
+  if (filter === 'Seed')      return isSeed;
+  if (filter === 'Pre A')     return isPreA;
+  if (filter === 'Series A')  return isSeriesA;
+  if (filter === 'Pre B')     return isPreB;
+  if (filter === 'Series B')  return isSeriesB;
+  if (filter === 'Pre C')     return isPreC;
+  if (filter === 'Series C')  return isSeriesC;
+  if (filter === 'Pre IPO')   return isPreIPO;
+  if (filter === '기타')       return !isKnown;
   return true;
 }
 
