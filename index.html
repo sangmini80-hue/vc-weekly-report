@@ -47,6 +47,8 @@
   .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; white-space: nowrap; }
   .badge-seed { background: #fef3c7; color: #92400e; }
   .badge-prea { background: #ede9fe; color: #5b21b6; }
+  .badge-preb { background: #e0e7ff; color: #3730a3; }
+  .badge-preipo { background: #fee2e2; color: #991b1b; }
   .badge-a { background: #dbeafe; color: #1e40af; }
   .badge-b { background: #d1fae5; color: #065f46; }
   .badge-c { background: #fce7f3; color: #9d174d; }
@@ -107,7 +109,9 @@
     <span class="filter-label">단계</span>
     <button class="filter-btn active" data-stage="all">전체</button>
     <button class="filter-btn" data-stage="Seed">Seed</button>
-    <button class="filter-btn" data-stage="Pre">Pre-A/B</button>
+    <button class="filter-btn" data-stage="Pre A">Pre A</button>
+    <button class="filter-btn" data-stage="Pre B">Pre B</button>
+    <button class="filter-btn" data-stage="Pre IPO">Pre IPO</button>
     <button class="filter-btn" data-stage="Series A">Series A</button>
     <button class="filter-btn" data-stage="Series B">Series B</button>
     <button class="filter-btn" data-stage="Series C">Series C</button>
@@ -208,6 +212,9 @@ function getStageBadge(stage) {
   const s = stage.toLowerCase();
   let cls = 'badge-etc';
   if (s.includes('seed')) cls = 'badge-seed';
+  else if (s.includes('pre') && s.includes('ipo')) cls = 'badge-preipo';
+  else if (s.includes('pre') && (s.includes('b') || s.includes('B'))) cls = 'badge-preb';
+  else if (s.includes('pre') && (s.includes('a') || s.includes('A'))) cls = 'badge-prea';
   else if (s.includes('pre')) cls = 'badge-prea';
   else if ((s.includes('series a') || s.includes('a 브릿지') || s === 'a') && !s.includes('b') && !s.includes('c')) cls = 'badge-a';
   else if (s.includes('series b') || s.includes('b 브릿지')) cls = 'badge-b';
@@ -232,11 +239,13 @@ function matchStageFilter(stage, filter) {
   if (!stage) return false;
   const s = stage.toLowerCase();
   if (filter === 'Seed') return s.includes('seed');
-  if (filter === 'Pre') return s.includes('pre');
-  if (filter === 'Series A') return (s.includes('series a') || s.includes('a 브릿지') || s === 'a') && !s.includes('series b') && !s.includes('series c');
-  if (filter === 'Series B') return s.includes('series b') || s.includes('b 브릿지') || s.includes('pre b');
+  if (filter === 'Pre A') return s.includes('pre') && s.includes('a') && !s.includes('b') && !s.includes('ipo');
+  if (filter === 'Pre B') return s.includes('pre') && s.includes('b') && !s.includes('ipo');
+  if (filter === 'Pre IPO') return s.includes('pre') && s.includes('ipo');
+  if (filter === 'Series A') return (s.includes('series a') || s.includes('a 브릿지') || s === 'a') && !s.includes('series b') && !s.includes('series c') && !s.includes('pre');
+  if (filter === 'Series B') return (s.includes('series b') || s.includes('b 브릿지')) && !s.includes('pre');
   if (filter === 'Series C') return s.includes('series c');
-  if (filter === 'Series D+') return s.includes('series d') || s.includes('series e') || s.includes('series f') || s.includes('ipo');
+  if (filter === 'Series D+') return s.includes('series d') || s.includes('series e') || s.includes('series f') || (s.includes('ipo') && !s.includes('pre'));
   return true;
 }
 
